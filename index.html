@@ -177,7 +177,7 @@ function $(id){return document.getElementById(id)}
 function cap(s){return s.charAt(0).toUpperCase()+s.slice(1)}
 function parse(key){var p=key.split("-");return new Date(+p[0],+p[1]-1,+p[2])}
 function isoWeek(dt){var t=new Date(Date.UTC(dt.getFullYear(),dt.getMonth(),dt.getDate())),dn=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-dn);var y0=new Date(Date.UTC(t.getUTCFullYear(),0,1));return Math.ceil(((t-y0)/864e5+1)/7)}
-function wk(y,m,d){var w=isoWeek(new Date(y,m,d));return'<span class="cl-w '+(w>=24&&w<=39?"ver":"inv")+'">'+w+"</span>"}
+function wk(y,m,d){var w=isoWeek(new Date(y,m,d));return'<span class="cl-w '+(w>=25&&w<=39?"ver":"inv")+'">'+w+"</span>"}
 var VAC={},vacMode=0,vacStart=null,toastT=0;
 try{JSON.parse(localStorage.getItem("cl-vac-2027")||"[]").forEach(function(q){VAC[q]=1})}catch(e){}
 function vsave(){try{localStorage.setItem("cl-vac-2027",JSON.stringify(Object.keys(VAC).sort()))}catch(e){}}
@@ -317,7 +317,7 @@ function anoHTML(){
   for(var d=1;d<=n;d++){var key=k(y,m,d),x=D[key],w=(off+d-1)%7;if(d>1&&w==0)h+=wy(y,m,d);h+='<span class="'+(x?x[0]:w==6?"s":w==5?"sa":"")+(PAGA[key]&&!x?" pg":"")+(VAC[key]?" vac":"")+'">'+d+"</span>"}
   h+="</div></button>"});
  return h+"</div>"}
-function wy(y,m,d){var w=isoWeek(new Date(y,m,d));return'<span class="wkn'+(w>=24&&w<=39?" ver":"")+'">'+w+"</span>"}
+function wy(y,m,d){var w=isoWeek(new Date(y,m,d));return'<span class="wkn'+(w>=25&&w<=39?" ver":"")+'">'+w+"</span>"}
 function listaHTML(){
  var keys=Object.keys(D).concat(Object.keys(PAGA)).concat(Object.keys(HORA)).sort(),h=vacList(),last="";
  keys.forEach(function(key){
@@ -354,7 +354,7 @@ function aviso(on,ok){document.getElementById("cl-ov").className="cl-ov"+(on?" o
  if(ok){try{localStorage.setItem("cl-aviso","v1")}catch(e){}document.querySelector(".cl-exc").classList.add("ok")}}
 try{if(localStorage.getItem("cl-aviso")==="v1")document.querySelector(".cl-exc").classList.add("ok")}catch(e){}
 document.addEventListener("keydown",function(e){if(e.key==="Escape")aviso(0)});
-aviso(1);
+try{if(localStorage.getItem("cl-aviso-dia")!==hoy){localStorage.setItem("cl-aviso-dia",hoy);aviso(1)}}catch(e){aviso(1)}
 var tx=0;$("cl-view").addEventListener("touchstart",function(e){tx=e.touches[0].clientX},{passive:true});
 $("cl-view").addEventListener("touchend",function(e){var dx=e.changedTouches[0].clientX-tx;if(tab=="mes"&&Math.abs(dx)>60)go(dx<0?1:-1)},{passive:true});
 draw();
