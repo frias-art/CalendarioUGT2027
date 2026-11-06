@@ -109,8 +109,6 @@
 .cl-vc{padding:12px 14px}
 .cl-vh{display:flex;justify-content:space-between;align-items:baseline;font-size:15px}
 .cl-vh span{font-weight:700;color:var(--vac);font-size:18px}
-.cl-bar{height:8px;border-radius:6px;background:var(--soft);margin:8px 0 6px;overflow:hidden}
-.cl-bar i{display:block;height:100%;background:var(--vac);border-radius:6px}
 .cl-vs{font-size:13px;color:var(--mu)}
 .cl-vb{display:flex;gap:8px;margin-top:10px}
 .cl-vb button{flex:1;padding:10px;border-radius:12px;background:var(--soft);font-weight:600;font-size:14px}
@@ -152,9 +150,9 @@
 </div>
 </div>
 <script>
-/* Vacaciones: dias laborables de vacaciones al año. Solo se pueden marcar de lunes a viernes de 2027 que no sean festivo ni puente.
+/* Vacaciones: se pueden marcar los dias laborables de lunes a viernes de 2027 que no sean festivo ni puente. Sin limite: solo se cuenta.
    Pon VAC_SAB=true si tus turnos cuentan el sabado como laborable. */
-var VAC_TOTAL=27,VAC_SAB=false;
+var VAC_SAB=false;
 var MN=["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
 var DN=["lunes","martes","miércoles","jueves","viernes","sábado","domingo"];
 var TL={f:"Festivo",t:"Traslado festivo",p:"Puente convenio"};
@@ -200,17 +198,20 @@ function vper(){
    if(!gap){cur.last=q;cur.n++;return}}
   cur={first:q,last:q,n:1};per.push(cur)});
  return per}
+function vweeks(){var m={};Object.keys(VAC).forEach(function(q){var wk=isoWeek(parse(q));m[wk]=(m[wk]||0)+1});return Object.keys(m).map(Number).sort(function(a,b){return a-b}).map(function(wk){return[wk,m[wk]]})}
+function vsem(p){var a=isoWeek(parse(p.first)),b=isoWeek(parse(p.last));return a==b?String(a):a+"–"+b}
+function vwtxt(){return vweeks().map(function(x){return x[0]+" ("+x[1]+")"}).join(", ")}
 function vfmt(q){var dt=parse(q);return dt.getDate()+" "+MN[dt.getMonth()].slice(0,3)}
 function vlabel(p){return p.first==p.last?vfmt(p.first):vfmt(p.first)+" – "+vfmt(p.last)}
 function vshare(){
- var t="Vacaciones 2027 ("+vcount()+"/"+VAC_TOTAL+" días)\n"+vper().map(function(p){return vlabel(p)+" ("+p.n+(p.n==1?" día)":" días)")}).join("\n");
+ var t="Vacaciones 2027 ("+vcount()+(vcount()==1?" día":" días")+")\n"+vper().map(function(p){return vlabel(p)+" · "+p.n+(p.n==1?" día":" días")+" · "+(vsem(p).indexOf("–")<0?"semana ":"semanas ")+vsem(p)}).join("\n")+"\nSemanas del año (días en cada una): "+vwtxt();
  if(navigator.share)navigator.share({text:t}).catch(function(){});
  else if(navigator.clipboard)navigator.clipboard.writeText(t).then(function(){toast("Resumen copiado")});
  else toast("No se pudo copiar")}
 function vacCard(vm){
- var u=vcount(),r=VAC_TOTAL-u,pc=Math.min(100,u/VAC_TOTAL*100);
- var h='<div class="cl-card cl-vc"><div class="cl-vh"><b>Mis vacaciones 2027</b><span>'+u+" / "+VAC_TOTAL+'</span></div><div class="cl-bar"><i style="width:'+pc+'%"></i></div>';
- h+='<div class="cl-vs">'+(r>0?"Te quedan <b>"+r+"</b> días laborables":"Has completado tus "+VAC_TOTAL+" días")+(vm?" · este mes: "+vm:"")+"</div>";
+ var u=vcount();
+ var h='<div class="cl-card cl-vc"><div class="cl-vh"><b>Mis vacaciones 2027</b><span>'+u+" "+(u==1?"día":"días")+"</span></div>";
+ h+='<div class="cl-vs">Días laborables marcados'+(vm?" · este mes: "+vm:"")+"</div>";
  h+='<div class="cl-vb"><button class="'+(vacMode?"on":"")+'" onclick="vmode(1)">'+(vacMode?"Listo":"Marcar vacaciones")+"</button></div>";
  if(vacMode)h+='<div class="cl-vt">'+(vacStart?'Ahora toca el último día del periodo, o el mismo día si es solo uno <button onclick="vcancel()">Cancelar</button>':"Toca el primer día de tus vacaciones. Toca un día marcado para quitarlo.")+"</div>";
  return h+"</div>"}
@@ -231,18 +232,23 @@ function vpdfStr(){
  var n=new Date();T(215,750,"Generado el "+n.getDate()+"/"+(n.getMonth()+1)+"/"+n.getFullYear(),9,0,[.85,.9,.87]);
  y=700;
  R(40,y-46,515,56,[.95,.93,.99]);
- T(56,y-14,"Días usados: "+ks.length+" de "+VAC_TOTAL,16,1,[.49,.23,.93]);
- T(56,y-34,"Quedan "+(VAC_TOTAL-ks.length)+" días laborables por disfrutar",11,0,[.3,.3,.3]);
+ T(56,y-14,"Días de vacaciones marcados: "+ks.length,16,1,[.49,.23,.93]);
+ T(56,y-34,"Repartidos en "+per.length+(per.length==1?" periodo":" periodos")+" y "+vweeks().length+(vweeks().length==1?" semana":" semanas")+" del año",11,0,[.3,.3,.3]);
  y-=80;
  T(40,y,"Periodos",13,1,GR);y-=10;
- function head(){R(40,y-22,515,22,[.88,.9,.89]);T(50,y-15,"Periodo",9.5,1);T(300,y-15,"Días laborables",9.5,1);T(420,y-15,"Semana",9.5,1);y-=22}
+ function head(){R(40,y-22,515,22,[.88,.9,.89]);T(50,y-15,"Periodo",9.5,1);T(190,y-15,"Semanas del año",9.5,1);T(305,y-15,"Días laborables",9.5,1);T(425,y-15,"Días",9.5,1);y-=22}
  head();
  per.forEach(function(q,i){
   if(y<90){np();y=780;head()}
   if(i%2)R(40,y-22,515,22,[.97,.97,.96]);
   var a=parse(q.first),b=parse(q.last);
-  T(50,y-15,vlabel(q),10.5,0);T(300,y-15,String(q.n),10.5,1,[.49,.23,.93]);T(420,y-15,DN[(a.getDay()+6)%7].slice(0,3)+" a "+DN[(b.getDay()+6)%7].slice(0,3),10,0,[.35,.35,.35]);y-=22});
+  T(50,y-15,vlabel(q),10.5,0);T(190,y-15,"Sem. "+vsem(q),10.5,1,GR);T(305,y-15,String(q.n),10.5,1,[.49,.23,.93]);T(425,y-15,DN[(a.getDay()+6)%7].slice(0,3)+" a "+DN[(b.getDay()+6)%7].slice(0,3),10,0,[.35,.35,.35]);y-=22});
  y-=24;
+ if(y<150){np();y=780}
+ T(40,y,"Semanas del año con vacaciones",13,1,GR);y-=20;
+ var ln="",ls=[];vweeks().forEach(function(x){var t=x[0]+" ("+x[1]+")";if((ln+t).length>62){ls.push(ln);ln=""}ln+=(ln?",   ":"")+t});if(ln)ls.push(ln);
+ ls.forEach(function(l){if(y<90){np();y=780}T(50,y,l,11,1,[.49,.23,.93]);y-=17});
+ T(50,y,"Semana del año (1-53) y, entre paréntesis, los días de vacaciones en esa semana.",8.5,0,[.45,.45,.45]);y-=34;
  if(y<150){np();y=780}
  T(40,y,"Días por mes",13,1,GR);y-=10;
  var pm={};ks.forEach(function(q){var m=+q.slice(5,7)-1;pm[m]=(pm[m]||0)+1});
@@ -275,11 +281,11 @@ function vpdfExport(){
  var a=document.createElement("a");a.href=URL.createObjectURL(bl);a.download=fn;document.body.appendChild(a);a.click();setTimeout(function(){a.remove();URL.revokeObjectURL(a.href)},4000);toast("PDF generado")}
 function vacList(){
  var h='<div class="cl-lm">Mis vacaciones 2027</div>',per=vper();
- if(!per.length)return h+'<div class="cl-it"><div>Aún no has marcado ningún día<small>Ve a la pestaña Mes y pulsa «Marcar días»</small></div></div>';
+ if(!per.length)return h+'<div class="cl-it"><div>Aún no has marcado ningún día<small>Ve a la pestaña Mes y pulsa «Marcar vacaciones»</small></div></div>';
  per.forEach(function(p){
   var a=parse(p.first),b=parse(p.last);
-  h+='<div class="cl-it"><div class="cl-ch" style="background:var(--vac)">'+p.n+"<small>"+(p.n==1?"día":"días")+"</small></div><div>"+vlabel(p)+"<small>"+DN[(a.getDay()+6)%7].slice(0,3)+" → "+DN[(b.getDay()+6)%7].slice(0,3)+"</small></div><em></em></div>"});
- h+='<div class="cl-vt2"><b>'+vcount()+" de "+VAC_TOTAL+" días</b> · quedan "+(VAC_TOTAL-vcount())+'</div><div class="cl-vb cl-vb2"><button class="on" onclick="vpdfExport()">Exportar PDF</button><button onclick="vshare()">Compartir</button><button class="red'+(vconf?" sure":"")+'" onclick="vclear()">'+(vconf?"¿Seguro?":"Borrar")+'</button></div>';
+  h+='<div class="cl-it"><div class="cl-ch" style="background:var(--vac)">'+p.n+"<small>"+(p.n==1?"día":"días")+"</small></div><div>"+vlabel(p)+"<small>Sem "+vsem(p)+" · "+DN[(a.getDay()+6)%7].slice(0,3)+" → "+DN[(b.getDay()+6)%7].slice(0,3)+"</small></div><em></em></div>"});
+ h+='<div class="cl-vt2"><b>'+vcount()+(vcount()==1?" día":" días")+"</b> marcados en "+per.length+(per.length==1?" periodo":" periodos")+'</div><div class="cl-vt2">Semanas del año (días en cada una): <b>'+vwtxt()+'</b></div><div class="cl-vb cl-vb2"><button class="on" onclick="vpdfExport()">Exportar PDF</button><button onclick="vshare()">Compartir</button><button class="red'+(vconf?" sure":"")+'" onclick="vclear()">'+(vconf?"¿Seguro?":"Borrar")+'</button></div>';
  return h}
 function info(key){
  var dt=parse(key),w=(dt.getDay()+6)%7,x=D[key],h='<b>'+cap(DN[w])+" "+dt.getDate()+" de "+MN[dt.getMonth()]+" · Semana "+isoWeek(dt)+"</b>";
@@ -333,12 +339,10 @@ function pick(key){
   if(!vok(key)){toast(key.slice(0,4)!=="2027"?"Solo se marcan días de 2027":"Ese día no es laborable (fin de semana, festivo o puente)");draw();return}
   if(vacStart===null){
    if(VAC[key]){delete VAC[key];vsave();draw();return}
-   if(vcount()>=VAC_TOTAL){toast("Ya has usado tus "+VAC_TOTAL+" días");draw();return}
    vacStart=key;draw();return}
   var a=vacStart<key?vacStart:key,b=vacStart<key?key:vacStart,add=[];
   for(var dt=parse(a),e=parse(b);dt<=e;dt.setDate(dt.getDate()+1)){var kk=k(dt.getFullYear(),dt.getMonth(),dt.getDate());if(vok(kk)&&!VAC[kk])add.push(kk)}
   vacStart=null;
-  if(vcount()+add.length>VAC_TOTAL){toast("Te pasarías: necesitas "+add.length+" días y te quedan "+(VAC_TOTAL-vcount()));draw();return}
   add.forEach(function(q){VAC[q]=1});vsave();toast(add.length+(add.length==1?" día añadido":" días añadidos"));draw();return}
  sel=key;draw()}
 (function(){
@@ -350,6 +354,7 @@ function aviso(on,ok){document.getElementById("cl-ov").className="cl-ov"+(on?" o
  if(ok){try{localStorage.setItem("cl-aviso","v1")}catch(e){}document.querySelector(".cl-exc").classList.add("ok")}}
 try{if(localStorage.getItem("cl-aviso")==="v1")document.querySelector(".cl-exc").classList.add("ok")}catch(e){}
 document.addEventListener("keydown",function(e){if(e.key==="Escape")aviso(0)});
+aviso(1);
 var tx=0;$("cl-view").addEventListener("touchstart",function(e){tx=e.touches[0].clientX},{passive:true});
 $("cl-view").addEventListener("touchend",function(e){var dx=e.changedTouches[0].clientX-tx;if(tab=="mes"&&Math.abs(dx)>60)go(dx<0?1:-1)},{passive:true});
 draw();
