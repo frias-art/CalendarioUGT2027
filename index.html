@@ -31,8 +31,8 @@
 .cl-next b{font-size:26px;line-height:1;color:var(--au);min-width:40px;text-align:center}
 .cl-next i{display:block;font-style:normal;font-size:12px;opacity:.75}
 .cl-tabs{display:flex;gap:4px;margin:-26px 16px 14px;padding:4px;background:var(--card);border:1px solid var(--bd);border-radius:16px;box-shadow:0 6px 20px rgba(0,0,0,.08);position:relative}
-.cl-tabs button{flex:1;padding:10px;border-radius:12px;font-weight:600;font-size:14px;color:var(--mu);transition:.2s}
-.cl-tabs button.on{background:var(--g1);color:#fff}
+.cl-tabs button{flex:1;padding:10px;border-radius:12px;font-weight:600;font-size:13px;color:var(--mu);transition:.2s}
+.cl-tabs button.on{background:var(--g1);color:#fff}.cl-tabs button.v.on{background:var(--vac)}
 @media (prefers-color-scheme:dark){.cl-tabs button.on{background:var(--au);color:#1a1a10}}
 .cl-card{margin:0 16px 14px;background:var(--card);border:1px solid var(--bd);border-radius:20px;padding:14px}
 .cl-mh{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
@@ -188,7 +188,7 @@ function vmode(m){vacMode=vacMode===m?0:m;vacStart=null;draw()}
 function vcancel(){vacStart=null;draw()}
 var vconf=0,vconfT=0;
 function vclear(){
- if(!vconf){vconf=1;clearTimeout(vconfT);vconfT=setTimeout(function(){vconf=0;if(tab=="lista")draw()},4000);draw();toast("Toca «¿Seguro?» para borrar todas tus vacaciones");return}
+ if(!vconf){vconf=1;clearTimeout(vconfT);vconfT=setTimeout(function(){vconf=0;if(tab=="lista"||tab=="vac")draw()},4000);draw();toast("Toca «¿Seguro?» para borrar todas tus vacaciones");return}
  vconf=0;clearTimeout(vconfT);VAC={};vsave();vacMode=0;vacStart=null;draw();toast("Vacaciones borradas")}
 function vper(){
  var ks=Object.keys(VAC).sort(),per=[],cur=null;
@@ -266,9 +266,18 @@ function vpdfExport(){
  try{var f=new File([bl],fn,{type:"application/pdf"});
   if(navigator.canShare&&navigator.canShare({files:[f]})){navigator.share({files:[f],title:"Vacaciones 2027"}).catch(function(){});return}}catch(e){}
  var a=document.createElement("a");a.href=URL.createObjectURL(bl);a.download=fn;document.body.appendChild(a);a.click();setTimeout(function(){a.remove();URL.revokeObjectURL(a.href)},4000);toast("PDF generado")}
+function vacTab(){
+ var per=vper();
+ var h=mesHTML();
+ h+='<div class="cl-lm">Mis periodos</div>';
+ if(!per.length)h+='<div class="cl-it"><div>Aún no has marcado ningún día<small>Pulsa «Marcar vacaciones» y toca el primer y último día</small></div></div>';
+ else per.forEach(function(p){var a=parse(p.first),b=parse(p.last);
+  h+='<div class="cl-it"><div class="cl-ch" style="background:var(--vac)">'+p.n+"<small>"+(p.n==1?"día":"días")+"</small></div><div>"+vlabel(p)+"<small>Sem "+vsem(p)+" · "+DN[(a.getDay()+6)%7].slice(0,3)+" → "+DN[(b.getDay()+6)%7].slice(0,3)+"</small></div><em></em></div>"});
+ h+='<div class="cl-vb cl-vb2"><button class="on" onclick="vpdfExport()">Exportar PDF</button><button onclick="vshare()">Compartir</button><button class="red'+(vconf?" sure":"")+'" onclick="vclear()">'+(vconf?"¿Seguro?":"Borrar")+'</button></div>';
+ return h}
 function vacList(){
  var h='<div class="cl-lm">Mis vacaciones 2027</div>',per=vper();
- if(!per.length)return h+'<div class="cl-it"><div>Aún no has marcado ningún día<small>Ve a la pestaña Mes y pulsa «Marcar vacaciones»</small></div></div>';
+ if(!per.length)return h+'<div class="cl-it"><div>Aún no has marcado ningún día<small>Pulsa «Marcar vacaciones» arriba</small></div></div>';
  per.forEach(function(p){
   var a=parse(p.first),b=parse(p.last);
   h+='<div class="cl-it"><div class="cl-ch" style="background:var(--vac)">'+p.n+"<small>"+(p.n==1?"día":"días")+"</small></div><div>"+vlabel(p)+"<small>Sem "+vsem(p)+" · "+DN[(a.getDay()+6)%7].slice(0,3)+" → "+DN[(b.getDay()+6)%7].slice(0,3)+"</small></div><em></em></div>"});
@@ -294,7 +303,7 @@ function mesHTML(){
   h+='<button class="'+c+'" onclick="pick(\''+key+'\')">'+d+"</button>"}
  h+='</div><div class="cl-det">'+(sel?info(sel):"Toca un día para ver el detalle")+'</div>';
  h+='<div class="cl-stats"><div><b>'+lab+'</b>laborables L-V</div><div><b>'+fest+'</b>festivos L-V</div><div><b>'+pu+'</b>puentes</div><div><b>'+isoWeek(new Date(y,m,1))+"–"+isoWeek(new Date(y,m,n))+'</b>semanas</div></div></div>';
- return vacCard(vm)+h}
+ return(tab=="vac"?vacCard(vm):"")+h}
 function anoHTML(){
  var h='<div class="cl-year">';
  L.forEach(function(ym,i){
@@ -306,7 +315,7 @@ function anoHTML(){
  return h+"</div>"}
 function wy(y,m,d){var w=isoWeek(new Date(y,m,d));return'<span class="wkn'+(w>=25&&w<=39?" ver":"")+'">'+w+"</span>"}
 function listaHTML(){
- var keys=Object.keys(D).concat(Object.keys(PAGA)).concat(Object.keys(HORA)).sort(),h=vacList(),last="";
+ var keys=Object.keys(D).concat(Object.keys(PAGA)).concat(Object.keys(HORA)).sort(),h="",last="";
  keys.forEach(function(key){
   var dt=parse(key),mm=dt.getMonth()+" "+dt.getFullYear(),x=D[key],col=x?COL[x[0]]:PAGA[key]?"var(--g2)":"var(--mu)";
   var nm=x?x[1]:PAGA[key]?"Paga extra":HORA[key],sub=x?(x[2]||TL[x[0]]):PAGA[key]?"Día de paga":"Cambio de hora";
@@ -315,8 +324,8 @@ function listaHTML(){
   h+='<div class="cl-it"><div class="cl-ch" style="background:'+col+'">'+dt.getDate()+"<small>"+DN[(dt.getDay()+6)%7].slice(0,3)+"</small></div><div>"+nm+"<small>"+sub+"</small></div><em>"+rel+"</em></div>"});
  return h}
 function draw(){
- $("cl-tabs").innerHTML=[["mes","Mes"],["ano","Año"],["lista","Lista"]].map(function(a){return'<button class="'+(tab==a[0]?"on":"")+'" onclick="setTab(\''+a[0]+'\')">'+a[1]+"</button>"}).join("");
- $("cl-view").innerHTML=tab=="mes"?mesHTML():tab=="ano"?anoHTML():listaHTML()}
+ $("cl-tabs").innerHTML=[["mes","Mes"],["ano","Año"],["vac","Vacaciones"],["lista","Lista"]].map(function(a){return'<button class="'+(tab==a[0]?"on":"")+(a[0]=="vac"?" v":"")+'" onclick="setTab(\''+a[0]+'\')">'+a[1]+"</button>"}).join("");
+ $("cl-view").innerHTML=tab=="mes"?mesHTML():tab=="ano"?anoHTML():tab=="vac"?vacTab():listaHTML()}
 function setTab(t){tab=t;vacMode=0;vacStart=null;draw()}
 function go(dx){idx=Math.max(0,Math.min(L.length-1,idx+dx));sel=null;draw()}
 function open_(i){idx=i;sel=null;tab="mes";draw();window.scrollTo({top:0,behavior:"smooth"})}
