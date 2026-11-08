@@ -4,7 +4,7 @@ var AF_EMAIL="ssugtsmm@gmail.com";
 /* WhatsApp del delegado/sección sindical (con prefijo, sin + ni espacios, ej. "34600123456"). Si se deja vacío, la persona elige el contacto. */
 var AF_WHATSAPP="";
 /* Datos de la empresa que se rellenan solos (el afiliado puede cambiarlos). Completa los que conozcas. */
-var AF_EMPRESA={nombre:"CERVEZAS SAN MIGUEL",segsocial:"",cif:"",direccion:"",cp:"",provincia:"MÁLAGA",municipio:"MÁLAGA",localidad:"MÁLAGA",convenio:""};
+var AF_EMPRESA={nombre:"CERVEZAS SAN MIGUEL S.L.U.",segsocial:"29132842883",cif:"B66363748",direccion:"CARRETERA AEROCLUB 1",cp:"29004",provincia:"MÁLAGA",municipio:"MÁLAGA",localidad:"MÁLAGA",convenio:"CERVEZAS SAN MIGUEL S.L.U."};
 
 /* ---------- Relleno del PDF (funcion pura, se puede probar fuera del navegador) ---------- */
 function afFill(PL,bytes,d,sigPng){
@@ -55,8 +55,13 @@ function afFill(PL,bytes,d,sigPng){
     sign(p1,418,262,154,78);
     if(d.pago=="banco")sign(p1,458,40,112,64);else sign(p2,442,40,128,70);
     form.flatten();
+    /* Limpieza: el PDF oficial trae scripts JavaScript del formulario; WhatsApp/Android avisan de "archivo dañino" si los ven. Se eliminan junto con el formulario ya aplanado. */
+    var N=PL.PDFName,ctx=doc.context;
+    ctx.enumerateIndirectObjects().forEach(function(e){var o=e[1];if(o&&typeof o.has==="function"&&(o.has(N.of("JS"))||o.has(N.of("JavaScript")))){try{ctx.delete(e[0])}catch(x){}}
+     if(o&&typeof o.has==="function"&&o.has(N.of("AA"))){try{o.delete(N.of("AA"))}catch(x){}}});
+    ["AcroForm","AA","OpenAction","Names"].forEach(function(k){try{doc.catalog.delete(N.of(k))}catch(x){}});
     doc.setTitle("Hoja de afiliación a UGT");doc.setProducer("Calendario Laboral 2027");
-    return doc.save()})})})})}
+    return doc.save({useObjectStreams:false})})})})})}
 
 /* ---------- Validaciones ---------- */
 function afDni(v){v=String(v||"").toUpperCase().replace(/[\s\-]/g,"");var L="TRWAGMYFPDXBNJZSQVHLCKE",m;
