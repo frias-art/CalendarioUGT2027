@@ -175,6 +175,7 @@ window.afGen=function(){
  .catch(function(e){toast_("No se pudo generar el PDF: "+e.message)})
  .then(function(){btn.textContent="Generar mi hoja de afiliación";btn.disabled=false})}
 function result(d){
+ if(window.clTrack)clTrack("afiliacion-generada");
  $("af-form").className="hid";var s=$("af-res");s.className="";
  s.innerHTML='<div class="c"><h3>¡Tu hoja está lista!</h3><p class="nt" style="margin:0">Se ha generado el PDF oficial de afiliación con tus datos y tu firma. Ahora envíalo a tu sección sindical:</p>'+
  '<div class="st"><b>1</b><div>Pulsa <b>«Enviar por WhatsApp»</b> o <b>«Enviar por correo»</b> y elige la aplicación. El PDF va adjunto.</div></div>'+
@@ -198,6 +199,6 @@ window.afDown=function(){if(!pdfBlob)return;var a=document.createElement("a");a.
 window.afMail=function(){location.href="mailto:"+AF_EMAIL+"?subject="+encodeURIComponent("Solicitud de afiliación UGT")+"&body="+encodeURIComponent(mailBody()+"\n\n(Adjunta el PDF descargado)")};
 window.afCopy=function(){if(navigator.clipboard)navigator.clipboard.writeText(AF_EMAIL).then(function(){toast_("Dirección copiada")});else toast_(AF_EMAIL)};
 window.afBack=function(){$("af-res").className="hid";$("af-form").className="";el.scrollTo(0,0)};
-window.afOpen=function(){el.classList.add("on");document.body.style.overflow="hidden";setTimeout(fit,50)};
+window.afOpen=function(){if(window.clTrack)clTrack("afiliacion-abierta");el.classList.add("on");document.body.style.overflow="hidden";setTimeout(fit,50)};
 window.afClose=function(){el.classList.remove("on");document.body.style.overflow=""};
 })()}
